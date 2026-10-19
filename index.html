@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Haukar skráning">
+<meta name="theme-color" content="#0f4c3a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Skráning útileikmanna</title>
+<style>
+  :root{
+    --court:#0f4c3a;
+    --court-light:#146a51;
+    --line:#e8e2d4;
+    --ink:#12231d;
+    --paper:#faf7f0;
+    --card:#ffffff;
+    --gold:#c9932f;
+    --red:#b8433a;
+    --blue:#2f5f8a;
+    --grey:#7c8a83;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    padding-bottom:60px;
+  }
+  header{
+    background:linear-gradient(135deg,var(--court),var(--court-light));
+    color:#fff;
+    padding:18px 16px 22px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:1.25rem;
+    letter-spacing:.3px;
+    font-weight:700;
+  }
+  header .sub{
+    font-size:.78rem;
+    opacity:.8;
+    margin-bottom:12px;
+  }
+  .topbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+  }
+  .topbar label{
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    opacity:.85;
+    display:block;
+    margin-bottom:2px;
+  }
+  .topbar input[type=text]{
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.35);
+    color:#fff;
+    border-radius:8px;
+    padding:7px 10px;
+    font-size:.9rem;
+    width:180px;
+  }
+  .topbar input[type=text]::placeholder{color:rgba(255,255,255,.6);}
+  .half-toggle{display:flex;gap:6px;}
+  .half-toggle button{
+    border:1px solid rgba(255,255,255,.4);
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    padding:7px 16px;
+    border-radius:8px;
+    font-weight:600;
+    cursor:pointer;
+    font-size:.85rem;
+  }
+  .half-toggle button.active{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:#1c1305;
+  }
+
+  main{max-width:960px;margin:0 auto;padding:16px;}
+
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:0 1px 3px rgba(0,0,0,.08);
+    padding:16px;
+    margin-bottom:16px;
+    border:1px solid var(--line);
+  }
+  .card h2{
+    margin:0 0 12px;
+    font-size:.95rem;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:var(--court);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card h2::before{
+    content:"";
+    width:4px;height:16px;
+    background:var(--gold);
+    border-radius:2px;
+  }
+
+  /* Setup grid */
+  .setup-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:8px;
+  }
+  .setup-grid .slot{display:flex;gap:6px;}
+  .setup-grid input{
+    padding:8px 9px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:.85rem;
+    font-family:inherit;
+  }
+  .setup-grid input.nr{width:54px;flex:none;text-align:center;font-weight:700;}
+  .setup-grid input.nm{flex:1;min-width:0;}
+  .setup-hint{font-size:.74rem;color:var(--grey);margin:-4px 0 12px;}
+  .setup-actions{margin-top:12px;display:flex;gap:10px;}
+  .btn{
+    border:none;
+    border-radius:8px;
+    padding:9px 16px;
+    font-weight:600;
+    font-size:.85rem;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--court);color:#fff;}
+  .btn-primary:hover{background:var(--court-light);}
+  .btn-secondary{background:#eee;color:var(--ink);}
+  .btn-secondary:hover{background:#e0e0e0;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* Player chips */
+  #playerChips, #gkChips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .chip{
+    border:2px solid var(--line);
+    background:#fff;
+    border-radius:20px;
+    padding:8px 16px;
+    font-size:.85rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:.15s;
+    color:var(--ink);
+  }
+  .chip:hover{border-color:var(--court-light);}
+  .chip.selected{
+    background:var(--court);
+    border-color:var(--court);
+    color:#fff;
+  }
+  .chip .num{
+    display:inline-block;
+    background:rgba(0,0,0,.12);
+    border-radius:50%;
+    width:18px;height:18px;
+    line-height:18px;
+    font-size:.68rem;
+    margin-right:6px;
+  }
+  .chip.selected .num{background:rgba(255,255,255,.25);}
+
+  /* Event buttons */
+  #eventGrid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:10px;
+  }
+  .evt-btn{
+    border:none;
+    border-radius:10px;
+    padding:16px 10px;
+    color:#fff;
+    font-weight:700;
+    font-size:.88rem;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    transition:transform .1s;
+  }
+  .evt-btn:active{transform:scale(.96);}
+  .evt-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .evt-btn .icon{font-size:1.3rem;}
+  .evt-btn.selected{
+    outline:3px solid var(--ink);
+    outline-offset:2px;
+    transform:scale(1.03);
+  }
+  .evt-mark{background:linear-gradient(135deg,#1f8a4c,#166b3a);}
+  .evt-varid{background:linear-gradient(135deg,var(--blue),#204a6b);}
+  .evt-tapad{background:linear-gradient(135deg,var(--red),#8f342c);}
+  .evt-frikast{background:linear-gradient(135deg,var(--gold),#a67322);}
+  .evt-vorn{background:linear-gradient(135deg,#5c4a8a,#453569);}
+  .evt-hrad{background:linear-gradient(135deg,#d97b1f,#a85c15);}
+
+  .selected-hint{
+    font-size:.8rem;
+    color:var(--grey);
+    margin-bottom:10px;
+  }
+  .selected-hint b{color:var(--court);}
+
+  .fastbreak-toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:12px;
+    padding:10px 12px;
+    border:1px dashed var(--line);
+    border-radius:8px;
+    font-size:.85rem;
+    font-weight:600;
+    color:var(--ink);
+    cursor:pointer;
+    background:#fbf9f3;
+  }
+  .fastbreak-toggle small{
+    font-weight:400;
+    color:var(--grey);
+    font-size:.72rem;
+  }
+  .fastbreak-toggle input[type=checkbox]{
+    width:18px;height:18px;
+    accent-color:var(--gold);
+    flex-shrink:0;
+  }
+  .fastbreak-toggle input[type=checkbox]:disabled{cursor:not-allowed;}
+  .fastbreak-toggle:has(input:disabled){opacity:.5;cursor:not-allowed;}
+  .fastbreak-toggle:has(input:checked){
+    border-color:var(--gold);
+    border-style:solid;
+    background:rgba(201,147,47,.1);
+  }
+
+  .export-fields{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+  .export-fields label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--grey);margin-bottom:3px;font-weight:600;}
+  .export-fields input,.export-fields select{padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:.85rem;font-family:inherit;background:#fff;}
+
+  /* Zone selector */
+  .zone-label{
+    font-size:.78rem;
+    font-weight:700;
+    color:var(--court);
+    margin-bottom:6px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .zone-label small{font-weight:400;color:var(--grey);font-size:.68rem;}
+  #zoneGrid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(78px,1fr));
+    gap:6px;
+    margin-bottom:14px;
+  }
+  .zone-btn{
+    border:2px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    border-radius:8px;
+    padding:9px 4px;
+    font-weight:700;
+    font-size:.74rem;
+    cursor:pointer;
+    transition:.12s;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+  }
+  .zone-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .zone-btn .icon{font-size:1rem;}
+  .zone-btn.selected{
+    background:var(--court);
+    border-color:var(--court);
+    color:#fff;
+  }
+  .zone-missing{
+    outline:2px dashed var(--red);
+    outline-offset:2px;
+  }
+
+  /* Log */
+  #logList{
+    max-height:180px;
+    overflow-y:auto;
+    font-size:.8rem;
+    border-top:1px solid var(--line);
+  }
+  .log-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    padding:6px 4px;
+    border-bottom:1px solid var(--line);
+  }
+  .log-row .tag{
+    font-weight:700;
+    padding:1px 8px;
+    border-radius:10px;
+    font-size:.68rem;
+    color:#fff;
+  }
+  .log-del{
+    border:none;
+    background:transparent;
+    color:var(--grey);
+    font-size:.85rem;
+    cursor:pointer;
+    padding:2px 6px;
+    border-radius:6px;
+    line-height:1;
+    flex-shrink:0;
+  }
+  .log-del:hover{
+    color:var(--red);
+    background:rgba(184,67,58,.1);
+  }
+  .log-empty{padding:14px;text-align:center;color:var(--grey);font-size:.82rem;}
+
+  .goal-badge{
+    margin-left:auto;
+    background:var(--gold);
+    color:#1c1305;
+    font-size:.78rem;
+    font-weight:800;
+    padding:3px 12px;
+    border-radius:14px;
+    text-transform:none;
+    letter-spacing:0;
+  }
+
+  /* Summary table */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.82rem;
+  }
+  th,td{
+    padding:7px 8px;
+    text-align:center;
+    border-bottom:1px solid var(--line);
+  }
+  th{
+    background:var(--court);
+    color:#fff;
+    font-weight:600;
+    font-size:.7rem;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
+  td:first-child,th:first-child{text-align:left;}
+  tbody tr:nth-child(even){background:#f7f4ec;}
+  tfoot td{font-weight:700;background:#eee6d1;}
+
+  .export-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+
+  .summary-toggle{margin-bottom:12px;}
+  .summary-toggle button{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+  }
+  .summary-toggle button.active{
+    background:var(--court);
+    border-color:var(--court);
+    color:#fff;
+  }
+
+  /* Tab bar */
+  .tabbar{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .tab-btn{
+    flex:1;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    padding:11px 14px;
+    border-radius:8px;
+    font-weight:700;
+    font-size:.85rem;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .tab-btn:hover{border-color:var(--court-light);}
+  .tab-btn.active{
+    background:var(--court);
+    border-color:var(--court);
+    color:#fff;
+  }
+
+  /* Analysis stat pills */
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .stat-pill{
+    background:#fbf9f3;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    text-align:center;
+  }
+  .stat-pill .num{
+    font-size:1.5rem;
+    font-weight:800;
+    color:var(--court);
+    display:block;
+    line-height:1.2;
+  }
+  .stat-pill .lbl{
+    font-size:.66rem;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    color:var(--grey);
+    margin-top:2px;
+    display:block;
+  }
+  .analysis-note{
+    font-size:.75rem;
+    color:var(--grey);
+    margin-top:10px;
+  }
+
+  @media (max-width:600px){
+    .topbar input[type=text]{width:140px;}
+    #eventGrid{grid-template-columns:repeat(2,1fr);}
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+  }
+
+  .save-status{
+    display:none;font-size:.78rem;font-weight:600;padding:7px 12px;border-radius:8px;
+    margin-bottom:12px;background:#eef4f0;color:var(--court);border:1px solid #cfe0d5;
+  }
+  .save-status.warn{background:#fdf1ea;color:#9a4a12;border-color:#f0cdb4;}
+
+  /* Vefapp: engin pull-to-refresh, engin tvísmelling-zoom, öruggt svæði */
+  html{overscroll-behavior-y:contain;-webkit-text-size-adjust:100%;}
+  body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom);}
+  button, .chip, .zone-btn, .evt-btn, .gk-btn, .tab-btn{touch-action:manipulation;-webkit-user-select:none;user-select:none;}
+
+  /* Markmaður */
+  .setup-sub{font-weight:700;font-size:.82rem;color:var(--court);margin:16px 0 8px;}
+  .setup-sub small{font-weight:400;color:var(--grey);}
+  #gkEventGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .gk-btn{
+    border:none;border-radius:12px;min-height:120px;color:#fff;
+    font-weight:800;font-size:1rem;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    transition:transform .1s;
+  }
+  .gk-btn:active{transform:scale(.96);}
+  .gk-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .gk-btn .icon{font-size:1.8rem;}
+  .gk-varid{background:linear-gradient(135deg,var(--blue),#204a6b);}
+  .gk-mark{background:linear-gradient(135deg,var(--red),#8f342c);}
+  .gk-framhja{background:linear-gradient(135deg,#8a948e,#69736d);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Skráning útileikmanna</h1>
+  <div class="sub">Haukar KK — leikskráning</div>
+  <div class="topbar">
+    <div>
+      <label>Andstæðingur</label>
+      <input type="text" id="opponent" placeholder="Nafn andstæðings">
+    </div>
+    <div>
+      <label>Hálfleikur</label>
+      <div class="half-toggle">
+        <button class="active" data-half="1" onclick="setHalf(1)">1. hálfleikur</button>
+        <button data-half="2" onclick="setHalf(2)">2. hálfleikur</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <div class="card" id="setupCard">
+    <h2>Leikmannahópur</h2>
+    <div class="setup-hint">Forvalið eftir Haukar_20262027 (útileikmenn). Tvö auð box neðst fyrir nýja leikmenn — skráðu númer og nafn.</div>
+    <div id="setupGrid" class="setup-grid"></div>
+    <div class="setup-sub">Markmenn <small>(einn auður fyrir 3. markmann síðar — skráðu númer og nafn)</small></div>
+    <div id="gkSetupGrid" class="setup-grid"></div>
+    <div class="setup-actions">
+      <button class="btn btn-primary" onclick="lockRoster()">Staðfesta hóp</button>
+      <button class="btn btn-secondary" onclick="defaultRoster()">Sjálfgefinn hópur</button>
+      <button class="btn btn-secondary" onclick="clearRoster()">Hreinsa nöfn</button>
+    </div>
+  </div>
+
+  <div class="save-status" id="saveStatus"></div>
+
+  <div class="tabbar" id="tabBar" style="display:none;">
+    <button class="tab-btn active" data-tab="skraning" onclick="switchTab('skraning')">📋 Skráning</button>
+    <button class="tab-btn" data-tab="markmadur" onclick="switchTab('markmadur')">🧤 Markmaður</button>
+    <button class="tab-btn" data-tab="uppgreining" onclick="switchTab('uppgreining')">📊 Greining</button>
+  </div>
+
+  <div id="tabSkraning">
+
+    <div class="card" id="registerCard" style="display:none;">
+      <h2>Leikmenn <span class="goal-badge" id="goalsTotalBadge">⚽ Mörk: 0</span></h2>
+      <div id="playerChips"></div>
+    </div>
+
+    <div class="card" id="eventCard" style="display:none;">
+      <h2>Skrá atvik</h2>
+      <div class="selected-hint" id="selectedHint">Veldu leikmann að ofan til að skrá atvik.</div>
+      <label class="fastbreak-toggle" id="fastBreakWrap">
+        <input type="checkbox" id="fastBreakCheck" disabled onchange="updateHint()">
+        <span>⚡ Hraðaupphlaup <small>(má velja ásamt svæði, fyrir Mark eða Skot varið)</small></span>
+      </label>
+
+      <div class="zone-label" id="zoneLabel">
+        🎯 Skotsvæði <small>(veldu svæði fyrst — nauðsynlegt fyrir Mark og Skot varið)</small>
+      </div>
+      <div id="zoneGrid">
+        <button class="zone-btn" data-zone="Horn" disabled onclick="selectZone('Horn', this)"><span class="icon">↖️</span>Horn</button>
+        <button class="zone-btn" data-zone="1o2" disabled onclick="selectZone('1o2', this)"><span class="icon">🎯</span>Milli 1-2</button>
+        <button class="zone-btn" data-zone="9m" disabled onclick="selectZone('9m', this)"><span class="icon">🏹</span>9m</button>
+        <button class="zone-btn" data-zone="6m" disabled onclick="selectZone('6m', this)"><span class="icon">6️⃣</span>6m</button>
+        <button class="zone-btn" data-zone="Víti" disabled onclick="selectZone('Víti', this)"><span class="icon">7️⃣</span>Víti</button>
+      </div>
+
+      <div id="eventGrid">
+        <button class="evt-btn evt-mark" disabled data-needs-zone="true" onclick="selectEventType('Mark', this)"><span class="icon">⚽</span>Mark</button>
+        <button class="evt-btn evt-varid" disabled data-needs-zone="true" onclick="selectEventType('Skot varið', this)"><span class="icon">🧤</span>Skot varið</button>
+        <button class="evt-btn evt-tapad" disabled onclick="selectEventType('Tapaður bolti', this)"><span class="icon">✖</span>Tapaður bolti</button>
+        <button class="evt-btn evt-frikast" disabled onclick="selectEventType('Fríkast unnið', this)"><span class="icon">🚩</span>Fríkast unnið</button>
+        <button class="evt-btn evt-vorn" disabled onclick="selectEventType('Varið í vörn', this)"><span class="icon">🛡</span>Varið í vörn</button>
+      </div>
+    </div>
+
+    <div class="card" id="logCard" style="display:none;">
+      <h2>Atvikaskrá <button class="btn btn-secondary" style="float:right;padding:4px 10px;font-size:.75rem;" onclick="undoLast()">Afturkalla síðasta</button></h2>
+      <div id="logList"><div class="log-empty">Engin atvik skráð enn.</div></div>
+    </div>
+
+  </div>
+
+  <div id="tabMarkmadur" style="display:none;">
+
+    <div class="card" id="gkCard">
+      <h2>Í marki</h2>
+      <div id="gkChips"></div>
+    </div>
+
+    <div class="card" id="gkEventCard">
+      <h2>Skot mótherja</h2>
+      <div class="selected-hint" id="gkHint">Veldu markmann hér að ofan.</div>
+      <div id="gkEventGrid">
+        <button class="gk-btn gk-varid" disabled onclick="logGk('Varið')"><span class="icon">🧤</span>Varið</button>
+        <button class="gk-btn gk-mark" disabled onclick="logGk('Mark')"><span class="icon">🥅</span>Mark á okkur</button>
+        <button class="gk-btn gk-framhja" disabled onclick="logGk('Framhjá')"><span class="icon">➡️</span>Framhjá</button>
+      </div>
+    </div>
+
+    <div class="card" id="gkSummaryCard">
+      <h2>Markvarsla</h2>
+      <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>Markmaður</th><th>Varin</th><th>Mörk fengin</th><th>Framhjá</th><th>Skot á mark</th><th>Markvarsla</th></tr>
+        </thead>
+        <tbody id="gkSummaryBody"></tbody>
+        <tfoot id="gkSummaryFoot"></tfoot>
+      </table>
+      </div>
+      <div class="analysis-note">Skot á mark = Varin + Mörk fengin. Markvarsla = Varin / Skot á mark. „Framhjá“ telst ekki með.</div>
+    </div>
+
+    <div class="card" id="gkLogCard">
+      <h2>Skotaskrá <button class="btn btn-secondary" style="float:right;padding:4px 10px;font-size:.75rem;" onclick="undoLastGk()">Afturkalla síðasta</button></h2>
+      <div id="gkLogList"><div class="log-empty">Engin skot skráð enn.</div></div>
+    </div>
+
+  </div>
+
+  <div id="tabUppgreining" style="display:none;">
+
+    <div class="card" id="analysisCard" style="display:none;">
+      <h2>Greining</h2>
+      <div class="half-toggle summary-toggle" id="analysisToggle">
+        <button class="active" data-filter="all" onclick="setSummaryFilter('all')">Allur leikur</button>
+        <button data-filter="1" onclick="setSummaryFilter('1')">1. hálfleikur</button>
+        <button data-filter="2" onclick="setSummaryFilter('2')">2. hálfleikur</button>
+      </div>
+      <div class="stat-grid" id="analysisStats"></div>
+      <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Leikmaður</th>
+            <th>Tapaðir boltar</th>
+            <th>Fríköst unnin</th>
+            <th>Mörk úr hraðaupphlaupi</th>
+            <th>Skot alls</th>
+            <th>Skotnýting</th>
+          </tr>
+        </thead>
+        <tbody id="analysisBody"></tbody>
+        <tfoot id="analysisFoot"></tfoot>
+      </table>
+      </div>
+      <div class="analysis-note">Skotnýting = mörk / (mörk + varin skot). Mörk úr hraðaupphlaupi telur aðeins skot sem enduðu í marki og voru merkt sem hraðaupphlaup.</div>
+    </div>
+
+    <div class="card" id="summaryCard" style="display:none;">
+      <h2>Samantekt</h2>
+      <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Leikmaður</th>
+            <th>Mörk</th>
+            <th>Varin skot</th>
+            <th>Skotnýting</th>
+            <th>Tapaðir</th>
+            <th>Fríköst</th>
+            <th>Varið í vörn</th>
+            <th>Hraðaupphlaup</th>
+            <th>Hrhl % af skotum</th>
+            <th>Samtals</th>
+          </tr>
+        </thead>
+        <tbody id="summaryBody"></tbody>
+        <tfoot id="summaryFoot"></tfoot>
+      </table>
+      </div>
+      <div class="export-fields">
+        <div><label for="venueSelect">Heima / Úti</label>
+          <select id="venueSelect"><option value="H">Heima</option><option value="A">Úti</option></select></div>
+        <div><label for="motInput">Mót</label>
+          <input type="text" id="motInput" value="Olís deildin"></div>
+        <div><label for="dateInput">Dags.</label>
+          <input type="date" id="dateInput"></div>
+      </div>
+      <div class="export-row">
+        <button class="btn btn-primary" onclick="exportSheet()">Sheet</button>
+        <button class="btn btn-primary" id="shareBtn" style="display:none;" onclick="shareSheet()">📤 Deila</button>
+        <button class="btn btn-secondary" onclick="resetAll()">Byrja nýja skráningu</button>
+      </div>
+    </div>
+
+    <div class="card" id="zoneCard">
+      <h2>Skot eftir svæðum</h2>
+      <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Leikmaður</th>
+            <th>Horn</th>
+            <th>1o2</th>
+            <th>9m</th>
+            <th>6m</th>
+            <th>Víti</th>
+            <th>Mörk alls</th>
+            <th>Nýting</th>
+          </tr>
+        </thead>
+        <tbody id="zoneBody"></tbody>
+        <tfoot id="zoneFoot"></tfoot>
+      </table>
+      </div>
+      <div class="analysis-note">Hver reitur sýnir Mörk / Skot (t.d. "3/5") fyrir það svæði. Nýting = mörk alls / skot alls. Í Sheet koma 6m-dálkarnir í stað Lína-dálkanna.</div>
+    </div>
+
+  </div>
+
+</main>
+
+<div style="text-align:center;font-size:.68rem;color:var(--grey);margin:18px 0 28px;">Skráning útileikmanna · vefapp v1</div>
+
+<script>
+// ---- Sjálfvirk vistun (localStorage) ----
+const STORE_KEY = 'haukar_utileikmenn_state_v1';
+let dirty = false;        // atvik sem ekki hafa verið flutt út
+let exportedAt = null;
+let saveOk = true;
+
+// Sjálfgefinn hópur = útileikmenn í Haukar_20262027 (númer, nafn), raðað eftir númeri + 2 auð box
+const DEFAULT_ROSTER = [
+  ['3','Hergeir'],['7','Daníel Máni'],['8','Freyr'],['9','Sigurður Snær'],['10','Helgi Marinó'],
+  ['11','Birkir'],['13','Darri'],['14','Össur'],['15','Hjörtur'],['17','Skarphéðinn'],
+  ['18','Arnór'],['24','Ólafur Ægir'],['25','Egill'],['26','Siggi Jeffs'],['28','Gústaf Logi'],
+  ['55','Þráinn Orri'],['84','Andri Fannar'],['',''],['','']
+];
+const EMPTY_SLOTS = DEFAULT_ROSTER.length;
+let roster = DEFAULT_ROSTER.map(r=>r[1]);
+let rosterNr = DEFAULT_ROSTER.map(r=>r[0]);
+
+// Markmenn: 2 forvaldir + 1 auður fyrir 3. markmann
+const DEFAULT_GK = [['32','Grétar Ari'],['19','Ari Dignus'],['','']];
+let gkRoster = DEFAULT_GK.map(r=>r[1]);
+let gkNr = DEFAULT_GK.map(r=>r[0]);
+let gkEvents = []; // {gk, type:'Varið'|'Mark'|'Framhjá', half, time}
+let activeGk = null;
+const GK_LABEL = {'Varið':'Varið','Mark':'Mark á okkur','Framhjá':'Framhjá'};
+const GK_COLORS = {'Varið':'#2f5f8a','Mark':'#b8433a','Framhjá':'#7c8a83'};
+let rosterLocked = false;
+let currentHalf = 1;
+let selectedPlayer = null;
+let selectedEventType = null;
+let selectedZone = null;
+let events = []; // {player, type, half, time, fastBreak, zone}
+let summaryFilter = 'all'; // 'all' | '1' | '2'
+
+const EVENT_COLORS = {
+  'Mark':'#1f8a4c',
+  'Skot varið':'#2f5f8a',
+  'Tapaður bolti':'#b8433a',
+  'Fríkast unnið':'#c9932f',
+  'Varið í vörn':'#5c4a8a'
+};
+const FASTBREAK_ELIGIBLE = ['Mark','Skot varið'];
+const ZONES = ['Horn','1o2','9m','6m','Víti'];
+const ZONE_NEEDED_TYPES = ['Mark','Skot varið'];
+
+function buildSetupGrid(){
+  const grid = document.getElementById('setupGrid');
+  grid.innerHTML = '';
+  roster.forEach((name,i)=>{
+    const div = document.createElement('div');
+    div.className = 'slot';
+    const nr = document.createElement('input');
+    nr.type = 'text'; nr.className = 'nr'; nr.placeholder = 'Nr.';
+    nr.setAttribute('inputmode','numeric'); nr.maxLength = 3;
+    nr.value = rosterNr[i] || '';
+    nr.addEventListener('input', ev=>{ rosterNr[i] = ev.target.value; saveState(); });
+    const nm = document.createElement('input');
+    nm.type = 'text'; nm.className = 'nm';
+    nm.placeholder = 'Nýr leikmaður';
+    nm.value = name || '';
+    nm.addEventListener('input', ev=>{ roster[i] = ev.target.value; saveState(); });
+    div.appendChild(nr);
+    div.appendChild(nm);
+    grid.appendChild(div);
+  });
+  buildGkSetupGrid();
+}
+
+function buildGkSetupGrid(){
+  const grid = document.getElementById('gkSetupGrid');
+  grid.innerHTML = '';
+  gkRoster.forEach((name,i)=>{
+    const div = document.createElement('div');
+    div.className = 'slot';
+    const nr = document.createElement('input');
+    nr.type = 'text'; nr.className = 'nr'; nr.placeholder = 'Nr.';
+    nr.setAttribute('inputmode','numeric'); nr.maxLength = 3;
+    nr.value = gkNr[i] || '';
+    nr.addEventListener('input', ev=>{ gkNr[i] = ev.target.value; saveState(); });
+    const nm = document.createElement('input');
+    nm.type = 'text'; nm.className = 'nm';
+    nm.placeholder = 'Nýr markmaður';
+    nm.value = name || '';
+    nm.addEventListener('input', ev=>{ gkRoster[i] = ev.target.value; saveState(); });
+    div.appendChild(nr);
+    div.appendChild(nm);
+    grid.appendChild(div);
+  });
+}
+buildSetupGrid();
+
+function defaultRoster(){
+  roster = DEFAULT_ROSTER.map(r=>r[1]);
+  rosterNr = DEFAULT_ROSTER.map(r=>r[0]);
+  gkRoster = DEFAULT_GK.map(r=>r[1]);
+  gkNr = DEFAULT_GK.map(r=>r[0]);
+  buildSetupGrid();
+}
+
+function clearRoster(){
+  roster = Array(EMPTY_SLOTS).fill('');
+  rosterNr = Array(EMPTY_SLOTS).fill('');
+  gkRoster = Array(DEFAULT_GK.length).fill('');
+  gkNr = Array(DEFAULT_GK.length).fill('');
+  buildSetupGrid();
+}
+
+function lockRoster(){
+  const pairs = roster.map((n,i)=>[n.trim(), (rosterNr[i]||'').trim()]).filter(p=>p[0].length>0);
+  if(pairs.length === 0){
+    alert('Skráðu að minnsta kosti eitt nafn áður en hópur er staðfestur.');
+    return;
+  }
+  roster = pairs.map(p=>p[0]);
+  rosterNr = pairs.map(p=>p[1]);
+  const gkPairs = gkRoster.map((n,i)=>[n.trim(), (gkNr[i]||'').trim()]).filter(p=>p[0].length>0);
+  gkRoster = gkPairs.map(p=>p[0]);
+  gkNr = gkPairs.map(p=>p[1]);
+  activeGk = gkRoster[0] || null;
+  rosterLocked = true;
+  buildChips();
+  renderGk();
+  document.getElementById('registerCard').style.display='block';
+  document.getElementById('eventCard').style.display='block';
+  document.getElementById('logCard').style.display='block';
+  document.getElementById('summaryCard').style.display='block';
+  document.getElementById('analysisCard').style.display='block';
+  document.getElementById('setupCard').style.display='none';
+  document.getElementById('tabBar').style.display='flex';
+  switchTab('skraning');
+  renderSummary();
+  renderAnalysis();
+  renderGoalsTotal();
+  saveState();
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab===tab);
+  });
+  document.getElementById('tabSkraning').style.display = tab==='skraning' ? 'block' : 'none';
+  document.getElementById('tabMarkmadur').style.display = tab==='markmadur' ? 'block' : 'none';
+  document.getElementById('tabUppgreining').style.display = tab==='uppgreining' ? 'block' : 'none';
+  if(tab==='markmadur') renderGk();
+  if(tab==='uppgreining') renderAnalysis();
+}
+
+function buildChips(){
+  const wrap = document.getElementById('playerChips');
+  wrap.innerHTML = '';
+  roster.forEach((name,i)=>{
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.innerHTML = `<span class="num">${nrOf(name) || '–'}</span>${name}`;
+    chip.onclick = ()=>selectPlayer(name, chip);
+    wrap.appendChild(chip);
+  });
+}
+
+function selectPlayer(name, chipEl){
+  selectedPlayer = name;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));
+  chipEl.classList.add('selected');
+  document.getElementById('fastBreakCheck').disabled = false;
+  document.querySelectorAll('.zone-btn').forEach(b=>b.disabled=false);
+  updateEventButtonStates();
+  updateHint();
+}
+
+function selectZone(zone, btnEl){
+  if(!selectedPlayer) return;
+  if(selectedZone === zone){
+    // tap again to deselect
+    selectedZone = null;
+    btnEl.classList.remove('selected');
+  } else {
+    selectedZone = zone;
+    document.querySelectorAll('.zone-btn').forEach(b=>b.classList.remove('selected'));
+    btnEl.classList.add('selected');
+  }
+  document.getElementById('zoneLabel').classList.remove('zone-missing');
+  updateEventButtonStates();
+  updateHint();
+}
+
+function updateEventButtonStates(){
+  document.querySelectorAll('.evt-btn').forEach(b=>{
+    if(!selectedPlayer){ b.disabled = true; return; }
+    if(b.dataset.needsZone === 'true'){
+      b.disabled = !selectedZone;
+    } else {
+      b.disabled = false;
+    }
+  });
+}
+
+function selectEventType(type, btnEl){
+  if(!selectedPlayer) return;
+  if(ZONE_NEEDED_TYPES.includes(type) && !selectedZone){
+    document.getElementById('zoneLabel').classList.add('zone-missing');
+    return;
+  }
+  selectedEventType = type;
+  document.querySelectorAll('.evt-btn').forEach(b=>b.classList.remove('selected'));
+  btnEl.classList.add('selected');
+  logEvent();
+}
+
+function updateHint(){
+  const hint = document.getElementById('selectedHint');
+  const isFastBreak = document.getElementById('fastBreakCheck').checked;
+  const tags = [];
+  if(selectedZone) tags.push(`🎯 svæði: ${selectedZone}`);
+  if(isFastBreak) tags.push('⚡ hraðaupphlaup valið');
+  if(selectedPlayer && tags.length){
+    hint.innerHTML = `Valinn leikmaður: <b>${selectedPlayer}</b> — ${tags.join(', ')}. Smelltu á atvik til að skrá.`;
+  } else if(selectedPlayer){
+    hint.innerHTML = `Valinn leikmaður: <b>${selectedPlayer}</b> — veldu svæði fyrir Mark/Skot varið, eða smelltu beint á Tapaður bolti / Fríkast unnið / Varið í vörn.`;
+  } else {
+    hint.innerHTML = 'Veldu leikmann að ofan til að skrá atvik.';
+  }
+}
+
+function setHalf(h){
+  currentHalf = h;
+  document.querySelectorAll('.half-toggle button').forEach(b=>{
+    b.classList.toggle('active', parseInt(b.dataset.half)===h);
+  });
+  saveState();
+}
+
+function logEvent(){
+  if(!selectedPlayer || !selectedEventType) return;
+  const fastBreakCheck = document.getElementById('fastBreakCheck');
+  const isFastBreak = fastBreakCheck.checked && FASTBREAK_ELIGIBLE.includes(selectedEventType);
+  const zoneForEvent = ZONE_NEEDED_TYPES.includes(selectedEventType) ? selectedZone : null;
+  events.push({
+    player: selectedPlayer,
+    type: selectedEventType,
+    half: currentHalf,
+    fastBreak: isFastBreak,
+    zone: zoneForEvent,
+    time: new Date()
+  });
+  selectedEventType = null;
+  selectedZone = null;
+  document.querySelectorAll('.evt-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.zone-btn').forEach(b=>b.classList.remove('selected'));
+  fastBreakCheck.checked = false;
+  updateEventButtonStates();
+  updateHint();
+  renderLog();
+  renderSummary();
+  renderAnalysis();
+  renderGoalsTotal();
+  markDirty();
+}
+
+function undoLast(){
+  events.pop();
+  renderLog();
+  renderSummary();
+  renderAnalysis();
+  renderGoalsTotal();
+  markDirty();
+}
+
+function renderGoalsTotal(){
+  const badge = document.getElementById('goalsTotalBadge');
+  if(!badge) return;
+  const totalGoals = events.filter(e=>e.type==='Mark').length;
+  badge.textContent = `⚽ Mörk: ${totalGoals}`;
+}
+
+function renderLog(){
+  const list = document.getElementById('logList');
+  if(events.length===0){
+    list.innerHTML = '<div class="log-empty">Engin atvik skráð enn.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  events.map((ev,idx)=>({ev,idx})).reverse().forEach(({ev,idx})=>{
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    const fbTag = ev.fastBreak ? ' ⚡' : '';
+    const zoneTag = ev.zone ? ` 🎯${ev.zone}` : '';
+    row.innerHTML = `<span>${ev.player} · HL${ev.half}</span><span class="tag" style="background:${EVENT_COLORS[ev.type]}">${ev.type}${fbTag}${zoneTag}</span><button class="log-del" title="Eyða atviki" onclick="deleteEvent(${idx})">✕</button>`;
+    list.appendChild(row);
+  });
+}
+
+function deleteEvent(idx){
+  if(!confirm('Eyða þessu atviki úr atvikaskrá?')) return;
+  events.splice(idx,1);
+  renderLog();
+  renderSummary();
+  renderAnalysis();
+  renderGoalsTotal();
+  markDirty();
+}
+
+function setSummaryFilter(f){
+  summaryFilter = f;
+  document.querySelectorAll('#summaryToggle button, #analysisToggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.filter===f);
+  });
+  renderSummary();
+  renderAnalysis();
+}
+
+function renderSummary(){
+  const body = document.getElementById('summaryBody');
+  const foot = document.getElementById('summaryFoot');
+  body.innerHTML = '';
+  const totals = {Mark:0,'Skot varið':0,'Tapaður bolti':0,'Fríkast unnið':0,'Varið í vörn':0};
+  let totalFastBreak = 0;
+  const scopedEvents = summaryFilter==='all' ? events : events.filter(e=>String(e.half)===summaryFilter);
+
+  roster.forEach(name=>{
+    const stats = {Mark:0,'Skot varið':0,'Tapaður bolti':0,'Fríkast unnið':0,'Varið í vörn':0};
+    const playerEvents = scopedEvents.filter(e=>e.player===name);
+    playerEvents.forEach(e=> stats[e.type]++ );
+    const fastBreakCount = playerEvents.filter(e=>e.fastBreak).length;
+    const shots = stats.Mark + stats['Skot varið'];
+    const pct = shots>0 ? Math.round(stats.Mark/shots*100)+'%' : '—';
+    const hradPct = shots>0 ? Math.round(fastBreakCount/shots*100)+'%' : '—';
+    const total = Object.values(stats).reduce((a,b)=>a+b,0);
+    Object.keys(totals).forEach(k=> totals[k]+=stats[k]);
+    totalFastBreak += fastBreakCount;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${name}</td><td>${stats.Mark}</td><td>${stats['Skot varið']}</td><td>${pct}</td><td>${stats['Tapaður bolti']}</td><td>${stats['Fríkast unnið']}</td><td>${stats['Varið í vörn']}</td><td>${fastBreakCount}</td><td>${hradPct}</td><td><b>${total}</b></td>`;
+    body.appendChild(tr);
+  });
+
+  const totalShots = totals.Mark + totals['Skot varið'];
+  const totalPct = totalShots>0 ? Math.round(totals.Mark/totalShots*100)+'%' : '—';
+  const totalHradPct = totalShots>0 ? Math.round(totalFastBreak/totalShots*100)+'%' : '—';
+  const grand = Object.values(totals).reduce((a,b)=>a+b,0);
+  foot.innerHTML = `<tr><td>Samtals</td><td>${totals.Mark}</td><td>${totals['Skot varið']}</td><td>${totalPct}</td><td>${totals['Tapaður bolti']}</td><td>${totals['Fríkast unnið']}</td><td>${totals['Varið í vörn']}</td><td>${totalFastBreak}</td><td>${totalHradPct}</td><td>${grand}</td></tr>`;
+  renderZoneBreakdown();
+}
+
+function zoneStatsFor(playerEvents){
+  // returns {Horn:{Mörk,Skot}, '1o2':{...}, ...}
+  const z = {};
+  ZONES.forEach(zn=> z[zn] = {Mörk:0, Skot:0});
+  playerEvents.forEach(e=>{
+    if(!e.zone) return;
+    if(e.type==='Mark'){ z[e.zone].Mörk++; z[e.zone].Skot++; }
+    else if(e.type==='Skot varið'){ z[e.zone].Skot++; }
+  });
+  return z;
+}
+
+function renderZoneBreakdown(){
+  const body = document.getElementById('zoneBody');
+  const foot = document.getElementById('zoneFoot');
+  if(!body || !foot) return;
+  body.innerHTML = '';
+  const scopedEvents = summaryFilter==='all' ? events : events.filter(e=>String(e.half)===summaryFilter);
+  const teamTotals = {};
+  ZONES.forEach(zn=> teamTotals[zn] = {Mörk:0, Skot:0});
+  let teamGoals=0, teamShots=0;
+
+  roster.forEach(name=>{
+    const playerEvents = scopedEvents.filter(e=>e.player===name);
+    const z = zoneStatsFor(playerEvents);
+    let goals=0, shots=0;
+    ZONES.forEach(zn=>{ teamTotals[zn].Mörk += z[zn].Mörk; teamTotals[zn].Skot += z[zn].Skot; goals += z[zn].Mörk; shots += z[zn].Skot; });
+    teamGoals += goals; teamShots += shots;
+    const pct = shots>0 ? Math.round(goals/shots*100)+'%' : '—';
+    const cells = ZONES.map(zn=> `<td>${z[zn].Skot>0 ? z[zn].Mörk+'/'+z[zn].Skot : '—'}</td>`).join('');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${name}</td>${cells}<td><b>${goals}</b></td><td>${pct}</td>`;
+    body.appendChild(tr);
+  });
+
+  const totalPct = teamShots>0 ? Math.round(teamGoals/teamShots*100)+'%' : '—';
+  const totalCells = ZONES.map(zn=> `<td>${teamTotals[zn].Skot>0 ? teamTotals[zn].Mörk+'/'+teamTotals[zn].Skot : '—'}</td>`).join('');
+  foot.innerHTML = `<tr><td>Samtals</td>${totalCells}<td>${teamGoals}</td><td>${totalPct}</td></tr>`;
+}
+
+function renderAnalysis(){
+  const statsWrap = document.getElementById('analysisStats');
+  const body = document.getElementById('analysisBody');
+  const foot = document.getElementById('analysisFoot');
+  if(!statsWrap || !body || !foot) return;
+  statsWrap.innerHTML = '';
+  body.innerHTML = '';
+  const scopedEvents = summaryFilter==='all' ? events : events.filter(e=>String(e.half)===summaryFilter);
+
+  let totalLost = 0, totalFreekick = 0, totalFastBreakGoals = 0, totalGoals = 0, totalShots = 0;
+  const rows = [];
+
+  roster.forEach(name=>{
+    const playerEvents = scopedEvents.filter(e=>e.player===name);
+    const lost = playerEvents.filter(e=>e.type==='Tapaður bolti').length;
+    const freekick = playerEvents.filter(e=>e.type==='Fríkast unnið').length;
+    const goals = playerEvents.filter(e=>e.type==='Mark').length;
+    const saves = playerEvents.filter(e=>e.type==='Skot varið').length;
+    const fastBreakGoals = playerEvents.filter(e=>e.type==='Mark' && e.fastBreak).length;
+    const shots = goals + saves;
+    const pct = shots>0 ? Math.round(goals/shots*100)+'%' : '—';
+
+    totalLost += lost;
+    totalFreekick += freekick;
+    totalFastBreakGoals += fastBreakGoals;
+    totalGoals += goals;
+    totalShots += shots;
+
+    rows.push({name, lost, freekick, fastBreakGoals, shots, goals, pct});
+  });
+
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.name}</td><td>${r.lost}</td><td>${r.freekick}</td><td>${r.fastBreakGoals}</td><td>${r.shots}</td><td>${r.pct}</td>`;
+    body.appendChild(tr);
+  });
+
+  const totalPct = totalShots>0 ? Math.round(totalGoals/totalShots*100)+'%' : '—';
+  foot.innerHTML = `<tr><td>Samtals</td><td>${totalLost}</td><td>${totalFreekick}</td><td>${totalFastBreakGoals}</td><td>${totalShots}</td><td>${totalPct}</td></tr>`;
+
+  const pills = [
+    {num: totalLost, lbl: 'Tapaðir boltar'},
+    {num: totalFreekick, lbl: 'Fríköst unnin'},
+    {num: totalFastBreakGoals, lbl: 'Mörk úr hraðaupphlaupi'},
+    {num: totalPct, lbl: 'Skotnýting liðs'}
+  ];
+  pills.forEach(p=>{
+    const div = document.createElement('div');
+    div.className = 'stat-pill';
+    div.innerHTML = `<span class="num">${p.num}</span><span class="lbl">${p.lbl}</span>`;
+    statsWrap.appendChild(div);
+  });
+}
+
+const SQUAD = [
+  {name:'Ari Dignus', nr:'19', pos:'Mark', keys:[]},
+  {name:'Grétar Ari Guðjónsson', nr:'32', pos:'Mark', keys:[]},
+  {name:'Sigurður Snær Sigurjónsson', nr:'9', pos:'Horn', keys:[]},
+  {name:'Össur Haraldsson', nr:'14', pos:'Horn', keys:[]},
+  {name:'Skarphéðinn Ívar Einarsson', nr:'17', pos:'9m', keys:['Skarpi']},
+  {name:'Hergeir Grímsson', nr:'3', pos:'9m', keys:[]},
+  {name:'Darri Aronsson', nr:'13', pos:'9m', keys:[]},
+  {name:'Freyr Aronsson', nr:'8', pos:'9m', keys:[]},
+  {name:'Hjörtur Ingi Halldórsson', nr:'15', pos:'9m', keys:[]},
+  {name:'Daníel Máni Sigurgeirsson', nr:'7', pos:'9m', keys:['Danni']},
+  {name:'Birkir Snær Steinsson', nr:'11', pos:'9m', keys:[]},
+  {name:'Ólafur Ægir Ólafsson', nr:'24', pos:'9m', keys:[]},
+  {name:'Andri Fannar Elísson', nr:'84', pos:'Horn', keys:[]},
+  {name:'Egill Jónsson', nr:'25', pos:'Horn', keys:[]},
+  {name:'Siggi Jeffs', nr:'26', pos:'Lína', keys:['Sigurður Jefferson Guarino','Siggi','Jeffs']},
+  {name:'Gústaf Logi Gunnarsson', nr:'28', pos:'Horn', keys:['Gústi']},
+  {name:'Helgi Marinó Kristófersson', nr:'10', pos:'Lína', keys:[]},
+  {name:'Þráinn Orri Jónsson', nr:'55', pos:'Lína', keys:[]},
+  {name:'Arnór Róbertsson', nr:'18', pos:'Lína', keys:[]}
+];
+
+const SHEET_HEADER = ["Nr.","Leikmaður","Leikstaða","Mótherji","Mót","Dags","Varin","Mörk fengin",
+"Skot á mark","Skot framhjá","Mörk","Skot","Skot %",
+"Horn Mörk","Horn Varið","Horn Fhjá","Horn Skot","1o2 Mörk","1o2 Varið","1o2 Fhjá","1o2 Skot",
+"GB Mörk","GB Varið","GB Fhjá","GB Skot","9m Mörk","9m Varið","9m Fhjá","9m Skot",
+"6m Mörk","6m Varið","6m Fhjá","6m Skot","Hraði Mörk","Hraði Varið","Hraði Fhjá","Hraði Skot",
+"Víti Mörk","Víti Varið","Víti Fhjá","Víti Skot","TB","LS","FV","ST","VS","SF","LS_OPP","HU"];
+
+function gkNrOf(name){
+  const idx = gkRoster.indexOf(name);
+  const entered = idx >= 0 ? (gkNr[idx] || '').trim() : '';
+  if(entered) return entered;
+  const info = lookupPlayer(name);
+  return info ? info.nr : '';
+}
+
+function gkCounts(name){
+  const evs = gkEvents.filter(e=>e.gk===name);
+  const varid = evs.filter(e=>e.type==='Varið').length;
+  const mark = evs.filter(e=>e.type==='Mark').length;
+  const fram = evs.filter(e=>e.type==='Framhjá').length;
+  return {varid, mark, fram, onTarget: varid + mark};
+}
+
+function gkPct(varid, onTarget){
+  return onTarget > 0 ? Math.round(varid/onTarget*100) + '%' : '—';
+}
+
+function setActiveGk(name){
+  activeGk = name;
+  renderGk();
+  saveState();
+}
+
+function logGk(type){
+  if(!activeGk) return;
+  gkEvents.push({gk: activeGk, type, half: currentHalf, time: new Date()});
+  renderGk();
+  markDirty();
+}
+
+function undoLastGk(){
+  gkEvents.pop();
+  renderGk();
+  markDirty();
+}
+
+function deleteGkEvent(idx){
+  if(!confirm('Eyða þessu skoti úr skotaskrá?')) return;
+  gkEvents.splice(idx,1);
+  renderGk();
+  markDirty();
+}
+
+function renderGk(){
+  const gks = gkRoster.filter(n=>n && n.trim());
+  const wrap = document.getElementById('gkChips');
+  wrap.innerHTML = '';
+  if(gks.length === 0){
+    wrap.innerHTML = '<div class="log-empty">Engir markmenn skráðir. Bættu þeim við í upphafi (Sjálfgefinn hópur).</div>';
+  }
+  gks.forEach(name=>{
+    const chip = document.createElement('button');
+    chip.className = 'chip' + (name === activeGk ? ' selected' : '');
+    chip.innerHTML = `<span class="num">${gkNrOf(name) || '–'}</span>${name}`;
+    chip.onclick = ()=>setActiveGk(name);
+    wrap.appendChild(chip);
+  });
+
+  document.querySelectorAll('.gk-btn').forEach(b=>{ b.disabled = !activeGk; });
+
+  const hint = document.getElementById('gkHint');
+  if(activeGk){
+    const c = gkCounts(activeGk);
+    hint.innerHTML = `Í marki: <b>${activeGk}</b> — Varið ${c.varid} · Mörk á okkur ${c.mark} · Framhjá ${c.fram} (markvarsla ${gkPct(c.varid, c.onTarget)})`;
+  } else {
+    hint.innerHTML = 'Veldu markmann hér að ofan.';
+  }
+
+  const body = document.getElementById('gkSummaryBody');
+  const foot = document.getElementById('gkSummaryFoot');
+  body.innerHTML = '';
+  let tV=0, tM=0, tF=0;
+  gks.forEach(name=>{
+    const c = gkCounts(name);
+    tV += c.varid; tM += c.mark; tF += c.fram;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${name}</td><td>${c.varid}</td><td>${c.mark}</td><td>${c.fram}</td><td>${c.onTarget}</td><td><b>${gkPct(c.varid, c.onTarget)}</b></td>`;
+    body.appendChild(tr);
+  });
+  foot.innerHTML = `<tr><td>Samtals</td><td>${tV}</td><td>${tM}</td><td>${tF}</td><td>${tV+tM}</td><td>${gkPct(tV, tV+tM)}</td></tr>`;
+
+  const list = document.getElementById('gkLogList');
+  if(gkEvents.length === 0){
+    list.innerHTML = '<div class="log-empty">Engin skot skráð enn.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  gkEvents.map((ev,idx)=>({ev,idx})).reverse().forEach(({ev,idx})=>{
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    row.innerHTML = `<span>${ev.gk} · HL${ev.half}</span><span class="tag" style="background:${GK_COLORS[ev.type]}">${GK_LABEL[ev.type]}</span><button class="log-del" title="Eyða skoti" onclick="deleteGkEvent(${idx})">✕</button>`;
+    list.appendChild(row);
+  });
+}
+
+function elVal(id){ const e = document.getElementById(id); return e ? e.value : ''; }
+
+function updateStatus(){
+  const el = document.getElementById('saveStatus');
+  if(!el) return;
+  const n = events.length + gkEvents.length;
+  if(!saveOk){
+    el.className = 'save-status warn';
+    el.textContent = '⚠️ Sjálfvirk vistun virkar ekki í þessum vafra — flyttu út (Sheet) reglulega.';
+    el.style.display = 'block';
+    return;
+  }
+  if(!rosterLocked){ el.style.display = 'none'; return; }
+  if(n === 0){
+    el.className = 'save-status';
+    el.textContent = '💾 Sjálfvirk vistun á · engin atvik skráð enn';
+  } else if(dirty){
+    el.className = 'save-status warn';
+    el.textContent = `💾 Vistað í vafranum · ${n} atvik · EKKI flutt út (ýttu á Sheet í Greining)`;
+  } else {
+    let t = '';
+    if(exportedAt){ t = ' kl. ' + new Date(exportedAt).toLocaleTimeString('is-IS',{hour:'2-digit',minute:'2-digit'}); }
+    el.className = 'save-status';
+    el.textContent = `✅ Flutt út${t} · ${n} atvik`;
+  }
+  el.style.display = 'block';
+}
+
+function saveState(){
+  try{
+    const state = {
+      v:1, roster, rosterNr, gkRoster, gkNr, rosterLocked, activeGk, currentHalf, summaryFilter,
+      events, gkEvents, dirty, exportedAt,
+      meta:{ opponent: elVal('opponent'), venue: elVal('venueSelect'), mot: elVal('motInput'), date: elVal('dateInput') }
+    };
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    saveOk = true;
+  }catch(e){ saveOk = false; }
+  updateStatus();
+}
+
+function markDirty(){ dirty = true; saveState(); }
+
+function onMetaChange(){
+  if(events.length + gkEvents.length > 0) dirty = true;
+  saveState();
+}
+
+function showLockedUI(){
+  buildChips();
+  ['registerCard','eventCard','logCard','summaryCard','analysisCard'].forEach(id=>{
+    document.getElementById(id).style.display = 'block';
+  });
+  document.getElementById('setupCard').style.display = 'none';
+  document.getElementById('tabBar').style.display = 'flex';
+  switchTab('skraning');
+  renderLog();
+  renderSummary();
+  renderAnalysis();
+  renderGoalsTotal();
+  renderGk();
+}
+
+function loadState(){
+  let raw = null;
+  try{ raw = localStorage.getItem(STORE_KEY); }
+  catch(e){ saveOk = false; updateStatus(); return; }
+  if(!raw){ updateStatus(); return; }
+  try{
+    const s = JSON.parse(raw);
+    if(!s || s.v !== 1) return;
+    const arr = (a, d) => Array.isArray(a) ? a : d;
+    roster = arr(s.roster, roster);
+    rosterNr = arr(s.rosterNr, rosterNr);
+    gkRoster = arr(s.gkRoster, gkRoster);
+    gkNr = arr(s.gkNr, gkNr);
+    events = arr(s.events, []).map(e => ({...e, time: new Date(e.time)}));
+    gkEvents = arr(s.gkEvents, []).map(e => ({...e, time: new Date(e.time)}));
+    rosterLocked = !!s.rosterLocked;
+    activeGk = s.activeGk || null;
+    currentHalf = s.currentHalf === 2 ? 2 : 1;
+    summaryFilter = s.summaryFilter || 'all';
+    dirty = !!s.dirty;
+    exportedAt = s.exportedAt || null;
+    const m = s.meta || {};
+    if(m.opponent !== undefined) document.getElementById('opponent').value = m.opponent;
+    if(m.venue) document.getElementById('venueSelect').value = m.venue;
+    if(m.mot !== undefined) document.getElementById('motInput').value = m.mot;
+    if(m.date) document.getElementById('dateInput').value = m.date;
+    buildSetupGrid();
+    if(rosterLocked){
+      showLockedUI();
+      document.querySelectorAll('#summaryToggle button, #analysisToggle button').forEach(b=>{
+        b.classList.toggle('active', b.dataset.filter === summaryFilter);
+      });
+    }
+    setHalf(currentHalf);
+    updateStatus();
+  }catch(err){
+    console.error('Gat ekki lesið vistuð gögn', err);
+  }
+}
+
+function nrOf(name){
+  const idx = roster.indexOf(name);
+  const entered = idx >= 0 ? (rosterNr[idx] || '').trim() : '';
+  if(entered) return entered;
+  const info = lookupPlayer(name);
+  return info ? info.nr : '';
+}
+
+function normName(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+
+function lookupPlayer(raw){
+  const n = normName(raw);
+  if(!n) return null;
+  const allKeys = p => [p.name, ...p.keys].map(normName);
+  const exact = SQUAD.find(p => allKeys(p).includes(n));
+  if(exact) return exact;
+  const cands = SQUAD.filter(p => allKeys(p).some(k => k.startsWith(n + ' ')));
+  return cands.length === 1 ? cands[0] : null;
+}
+
+function csvCell(v){
+  const s = String(v ?? '');
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+
+function buildSheetCsv(meta){
+  const motherji = `${meta.opponent} (${meta.venue})`;
+  const agg = new Map();
+  const unknown = [];
+  roster.forEach(rawName=>{
+    const playerEvents = events.filter(e=>e.player===rawName);
+    if(!playerEvents.length) return;
+    const info = lookupPlayer(rawName);
+    const key = info ? info.name : rawName;
+    if(!info && !unknown.includes(rawName)) unknown.push(rawName);
+    if(!agg.has(key)) agg.set(key, {name:key, info, nr:nrOf(rawName), c:{}});
+    const c = agg.get(key).c;
+    const add = k => { c[k] = (c[k]||0) + 1; };
+    playerEvents.forEach(e=>{
+      if(e.type === 'Mark'){ add(`${e.zone} Mörk`); if(e.fastBreak) add('HU'); }
+      else if(e.type === 'Skot varið'){ add(`${e.zone} Varið`); }
+      else if(e.type === 'Tapaður bolti'){ add('TB'); }
+      else if(e.type === 'Fríkast unnið'){ add('FV'); }
+      else if(e.type === 'Varið í vörn'){ add('LS'); }
+    });
+  });
+  gkRoster.forEach(rawName=>{
+    const gEvents = gkEvents.filter(e=>e.gk===rawName);
+    if(!gEvents.length) return;
+    const info = lookupPlayer(rawName);
+    const key = info ? info.name : rawName;
+    if(!agg.has(key)) agg.set(key, {name:key, info, nr:gkNrOf(rawName), c:{}});
+    const a = agg.get(key);
+    a.isGk = true;
+    if(!a.nr) a.nr = gkNrOf(rawName);
+    gEvents.forEach(e=>{
+      const k = e.type==='Varið' ? 'Varin' : (e.type==='Mark' ? 'Mörk fengin' : 'Skot framhjá');
+      a.c[k] = (a.c[k]||0) + 1;
+    });
+  });
+  const lines = [SHEET_HEADER.map(csvCell).join(',')];
+  agg.forEach(a=>{
+    const row = SHEET_HEADER.map(h=>{
+      switch(h){
+        case 'Nr.': return a.nr;
+        case 'Leikmaður': return a.name;
+        case 'Leikstaða': return a.isGk ? 'Mark' : (a.info ? a.info.pos : '');
+        case 'Mótherji': return motherji;
+        case 'Mót': return meta.mot;
+        case 'Dags': return meta.dags;
+        default: return a.c[h] || '';
+      }
+    });
+    lines.push(row.map(csvCell).join(','));
+  });
+  return {csv: lines.join('\r\n') + '\r\n', unknown, rows: agg.size};
+}
+
+function todayISO(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function prepareExport(){
+  if(events.length === 0 && gkEvents.length === 0){ alert('Engin atvik til að flytja út.'); return null; }
+  const opponent = document.getElementById('opponent').value.trim();
+  if(!opponent){ alert('Skráðu nafn mótherja efst á síðunni áður en þú flytur út.'); return null; }
+  const iso = document.getElementById('dateInput').value || todayISO();
+  const meta = {
+    opponent,
+    venue: document.getElementById('venueSelect').value,
+    mot: document.getElementById('motInput').value.trim() || 'Olís deildin',
+    dags: iso.split('-').reverse().join('.')
+  };
+  const {csv, unknown} = buildSheetCsv(meta);
+  const filename = `Haukar_${opponent.replace(/[\s\\/:*?"<>|]+/g,'')}_${iso.replace(/-/g,'')}_import.csv`;
+  return {csv, unknown, filename};
+}
+
+function markExported(){
+  dirty = false;
+  exportedAt = new Date().toISOString();
+  saveState();
+}
+
+function warnUnknown(unknown){
+  if(unknown.length){
+    alert('Þessi nöfn fundust ekki í leikmannaskránni, Leikstaða er því tóm (Nr. kemur úr númerareitnum):\n' + unknown.join(', '));
+  }
+}
+
+function exportSheet(){
+  const ex = prepareExport();
+  if(!ex) return;
+  const blob = new Blob([ex.csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = ex.filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  markExported();
+  warnUnknown(ex.unknown);
+}
+
+// Deila í gegnum deilingarvalmynd iPad (Files, Google Sheets, tölvupóstur o.fl.)
+async function shareSheet(){
+  const ex = prepareExport();
+  if(!ex) return;
+  let file = null;
+  try{ file = new File([ex.csv], ex.filename, {type:'text/csv'}); }catch(e){}
+  if(file && navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file], title: ex.filename});
+      markExported();           // aðeins merkt sem flutt út ef deiling kláraðist
+      warnUnknown(ex.unknown);
+    }catch(err){
+      if(err && err.name === 'AbortError') return;   // hætt við — ekki merkt sem flutt út
+      exportSheet();                                  // annars: venjulegt niðurhal
+    }
+  } else {
+    exportSheet();
+  }
+}
+
+function initShareButton(){
+  try{
+    const f = new File(['x'], 'x.csv', {type:'text/csv'});
+    if(navigator.canShare && navigator.canShare({files:[f]})){
+      document.getElementById('shareBtn').style.display = '';
+    }
+  }catch(e){}
+}
+
+function resetAll(){
+  const total = events.length + gkEvents.length;
+  if(total > 0 && dirty){
+    if(!confirm('⚠️ GÖGNIN HAFA EKKI VERIÐ FLUTT ÚT!\n\nÞað eru ' + total + ' atvik skráð sem hafa ekki verið vistuð í Sheet.\n\nSmelltu á „Hætta við“ og ýttu á Sheet (Greining) fyrst.\n\nEyða samt öllu og byrja upp á nýtt?')) return;
+  } else if(!confirm(total > 0 ? 'Gögnin hafa verið flutt út. Byrja nýja skráningu?' : 'Byrja nýja skráningu?')) return;
+  events = [];
+  gkEvents = [];
+  activeGk = null;
+  gkRoster = DEFAULT_GK.map(r=>r[1]);
+  gkNr = DEFAULT_GK.map(r=>r[0]);
+  roster = DEFAULT_ROSTER.map(r=>r[1]);
+  rosterNr = DEFAULT_ROSTER.map(r=>r[0]);
+  rosterLocked = false;
+  selectedPlayer = null;
+  selectedEventType = null;
+  selectedZone = null;
+  summaryFilter = 'all';
+  document.getElementById('venueSelect').value = 'H';
+  document.getElementById('motInput').value = 'Olís deildin';
+  document.getElementById('dateInput').value = todayISO();
+  document.getElementById('opponent').value = '';
+  setHalf(1);
+  buildSetupGrid();
+  document.getElementById('setupCard').style.display='block';
+  document.getElementById('registerCard').style.display='none';
+  document.getElementById('eventCard').style.display='none';
+  document.getElementById('logCard').style.display='none';
+  document.getElementById('summaryCard').style.display='none';
+  document.getElementById('analysisCard').style.display='none';
+  document.getElementById('tabBar').style.display='none';
+  document.getElementById('tabUppgreining').style.display='none';
+  document.getElementById('tabMarkmadur').style.display='none';
+  document.getElementById('tabSkraning').style.display='block';
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab==='skraning'));
+  document.querySelectorAll('.evt-btn').forEach(b=>{b.disabled=true;b.classList.remove('selected');});
+  document.querySelectorAll('.zone-btn').forEach(b=>{b.disabled=true;b.classList.remove('selected');});
+  document.getElementById('zoneLabel').classList.remove('zone-missing');
+  const fastBreakCheck = document.getElementById('fastBreakCheck');
+  fastBreakCheck.checked = false;
+  fastBreakCheck.disabled = true;
+  renderLog();
+  renderGoalsTotal();
+  renderGk();
+  dirty = false;
+  exportedAt = null;
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  updateStatus();
+}
+
+document.getElementById('dateInput').value = todayISO();
+['opponent','venueSelect','motInput','dateInput'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('input', onMetaChange);
+  el.addEventListener('change', onMetaChange);
+});
+loadState();
+initShareButton();
+
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+
+</body>
+</html>
