@@ -221,6 +221,13 @@
   .evt-frikast{background:linear-gradient(135deg,var(--gold),#a67322);}
   .evt-vorn{background:linear-gradient(135deg,#5c4a8a,#453569);}
   .evt-hrad{background:linear-gradient(135deg,#d97b1f,#a85c15);}
+  .evt-stolinn{background:linear-gradient(135deg,#1a7f7a,#12605c);}
+  .mode-tabs{display:flex;gap:6px;margin-bottom:14px;}
+  .mode-btn{
+    flex:1;padding:10px 6px;border:2px solid var(--line);background:#fff;color:var(--ink);
+    border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer;transition:.12s;
+  }
+  .mode-btn.active{background:var(--court);border-color:var(--court);color:#fff;}
 
   .selected-hint{
     font-size:.8rem;
@@ -531,7 +538,6 @@
 
   <div class="tabbar" id="tabBar" style="display:none;">
     <button class="tab-btn active" data-tab="skraning" onclick="switchTab('skraning')">📋 Skráning</button>
-    <button class="tab-btn" data-tab="markmadur" onclick="switchTab('markmadur')">🧤 Markmaður</button>
     <button class="tab-btn" data-tab="uppgreining" onclick="switchTab('uppgreining')">📊 Greining</button>
   </div>
 
@@ -542,8 +548,18 @@
       <div id="playerChips"></div>
     </div>
 
+    <div class="card" id="gkCard" style="display:none;">
+      <h2>Í marki</h2>
+      <div id="gkChips"></div>
+    </div>
+
     <div class="card" id="eventCard" style="display:none;">
       <h2>Skrá atvik</h2>
+      <div class="mode-tabs">
+        <button class="mode-btn active" id="modeBtnPlayer" onclick="setEventMode('player')">🏃 Leikmaður</button>
+        <button class="mode-btn" id="modeBtnGk" onclick="setEventMode('gk')">🧤 Skot mótherja</button>
+      </div>
+      <div id="playerEventPane">
       <div class="selected-hint" id="selectedHint">Veldu leikmann að ofan til að skrá atvik.</div>
       <label class="fastbreak-toggle" id="fastBreakWrap">
         <input type="checkbox" id="fastBreakCheck" disabled onchange="updateHint()">
@@ -567,50 +583,23 @@
         <button class="evt-btn evt-tapad" disabled onclick="selectEventType('Tapaður bolti', this)"><span class="icon">✖</span>Tapaður bolti</button>
         <button class="evt-btn evt-frikast" disabled onclick="selectEventType('Fríkast unnið', this)"><span class="icon">🚩</span>Fríkast unnið</button>
         <button class="evt-btn evt-vorn" disabled onclick="selectEventType('Varið í vörn', this)"><span class="icon">🛡</span>Varið í vörn</button>
+        <button class="evt-btn evt-stolinn" disabled onclick="selectEventType('Stolinn', this)"><span class="icon">🦅</span>Stolinn</button>
+      </div>
+      </div>
+
+      <div id="gkEventPane" style="display:none;">
+        <div class="selected-hint" id="gkHint">Veldu markmann í „Í marki“ hér að ofan.</div>
+        <div id="gkEventGrid">
+          <button class="gk-btn gk-varid" disabled onclick="logGk('Varið')"><span class="icon">🧤</span>Varið</button>
+          <button class="gk-btn gk-mark" disabled onclick="logGk('Mark')"><span class="icon">🥅</span>Mark á okkur</button>
+          <button class="gk-btn gk-framhja" disabled onclick="logGk('Framhjá')"><span class="icon">➡️</span>Framhjá</button>
+        </div>
       </div>
     </div>
 
     <div class="card" id="logCard" style="display:none;">
       <h2>Atvikaskrá <button class="btn btn-secondary" style="float:right;padding:4px 10px;font-size:.75rem;" onclick="undoLast()">Afturkalla síðasta</button></h2>
       <div id="logList"><div class="log-empty">Engin atvik skráð enn.</div></div>
-    </div>
-
-  </div>
-
-  <div id="tabMarkmadur" style="display:none;">
-
-    <div class="card" id="gkCard">
-      <h2>Í marki</h2>
-      <div id="gkChips"></div>
-    </div>
-
-    <div class="card" id="gkEventCard">
-      <h2>Skot mótherja</h2>
-      <div class="selected-hint" id="gkHint">Veldu markmann hér að ofan.</div>
-      <div id="gkEventGrid">
-        <button class="gk-btn gk-varid" disabled onclick="logGk('Varið')"><span class="icon">🧤</span>Varið</button>
-        <button class="gk-btn gk-mark" disabled onclick="logGk('Mark')"><span class="icon">🥅</span>Mark á okkur</button>
-        <button class="gk-btn gk-framhja" disabled onclick="logGk('Framhjá')"><span class="icon">➡️</span>Framhjá</button>
-      </div>
-    </div>
-
-    <div class="card" id="gkSummaryCard">
-      <h2>Markvarsla</h2>
-      <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr><th>Markmaður</th><th>Varin</th><th>Mörk fengin</th><th>Framhjá</th><th>Skot á mark</th><th>Markvarsla</th></tr>
-        </thead>
-        <tbody id="gkSummaryBody"></tbody>
-        <tfoot id="gkSummaryFoot"></tfoot>
-      </table>
-      </div>
-      <div class="analysis-note">Skot á mark = Varin + Mörk fengin. Markvarsla = Varin / Skot á mark. „Framhjá“ telst ekki með.</div>
-    </div>
-
-    <div class="card" id="gkLogCard">
-      <h2>Skotaskrá <button class="btn btn-secondary" style="float:right;padding:4px 10px;font-size:.75rem;" onclick="undoLastGk()">Afturkalla síðasta</button></h2>
-      <div id="gkLogList"><div class="log-empty">Engin skot skráð enn.</div></div>
     </div>
 
   </div>
@@ -657,6 +646,7 @@
             <th>Tapaðir</th>
             <th>Fríköst</th>
             <th>Varið í vörn</th>
+            <th>Stolinn</th>
             <th>Hraðaupphlaup</th>
             <th>Hrhl % af skotum</th>
             <th>Samtals</th>
@@ -704,11 +694,25 @@
       <div class="analysis-note">Hver reitur sýnir Mörk / Skot (t.d. "3/5") fyrir það svæði. Nýting = mörk alls / skot alls. Í Sheet koma 6m-dálkarnir í stað Lína-dálkanna.</div>
     </div>
 
+    <div class="card" id="gkSummaryCard">
+      <h2>Markvarsla</h2>
+      <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>Markmaður</th><th>Varin</th><th>Mörk fengin</th><th>Framhjá</th><th>Skot á mark</th><th>Markvarsla</th></tr>
+        </thead>
+        <tbody id="gkSummaryBody"></tbody>
+        <tfoot id="gkSummaryFoot"></tfoot>
+      </table>
+      </div>
+      <div class="analysis-note">Skot á mark = Varin + Mörk fengin. Markvarsla = Varin / Skot á mark. „Framhjá“ telst ekki með. Fylgir síunni (allur leikur / hálfleikur) hér að ofan.</div>
+    </div>
+
   </div>
 
 </main>
 
-<div style="text-align:center;font-size:.68rem;color:var(--grey);margin:18px 0 28px;">Skráning útileikmanna · vefapp v1</div>
+<div style="text-align:center;font-size:.68rem;color:var(--grey);margin:18px 0 28px;">Skráning útileikmanna · vefapp v2</div>
 
 <script>
 // ---- Sjálfvirk vistun (localStorage) ----
@@ -734,6 +738,7 @@ let gkRoster = DEFAULT_GK.map(r=>r[1]);
 let gkNr = DEFAULT_GK.map(r=>r[0]);
 let gkEvents = []; // {gk, type:'Varið'|'Mark'|'Framhjá', half, time}
 let activeGk = null;
+let eventMode = 'player';  // 'player' | 'gk' (flipar í Skrá atvik)
 const GK_LABEL = {'Varið':'Varið','Mark':'Mark á okkur','Framhjá':'Framhjá'};
 const GK_COLORS = {'Varið':'#2f5f8a','Mark':'#b8433a','Framhjá':'#7c8a83'};
 let rosterLocked = false;
@@ -749,7 +754,8 @@ const EVENT_COLORS = {
   'Skot varið':'#2f5f8a',
   'Tapaður bolti':'#b8433a',
   'Fríkast unnið':'#c9932f',
-  'Varið í vörn':'#5c4a8a'
+  'Varið í vörn':'#5c4a8a',
+  'Stolinn':'#1a7f7a'
 };
 const FASTBREAK_ELIGIBLE = ['Mark','Skot varið'];
 const ZONES = ['Horn','1o2','9m','6m','Víti'];
@@ -833,6 +839,7 @@ function lockRoster(){
   buildChips();
   renderGk();
   document.getElementById('registerCard').style.display='block';
+  document.getElementById('gkCard').style.display='block';
   document.getElementById('eventCard').style.display='block';
   document.getElementById('logCard').style.display='block';
   document.getElementById('summaryCard').style.display='block';
@@ -851,9 +858,7 @@ function switchTab(tab){
     b.classList.toggle('active', b.dataset.tab===tab);
   });
   document.getElementById('tabSkraning').style.display = tab==='skraning' ? 'block' : 'none';
-  document.getElementById('tabMarkmadur').style.display = tab==='markmadur' ? 'block' : 'none';
   document.getElementById('tabUppgreining').style.display = tab==='uppgreining' ? 'block' : 'none';
-  if(tab==='markmadur') renderGk();
   if(tab==='uppgreining') renderAnalysis();
 }
 
@@ -927,7 +932,7 @@ function updateHint(){
   if(selectedPlayer && tags.length){
     hint.innerHTML = `Valinn leikmaður: <b>${selectedPlayer}</b> — ${tags.join(', ')}. Smelltu á atvik til að skrá.`;
   } else if(selectedPlayer){
-    hint.innerHTML = `Valinn leikmaður: <b>${selectedPlayer}</b> — veldu svæði fyrir Mark/Skot varið, eða smelltu beint á Tapaður bolti / Fríkast unnið / Varið í vörn.`;
+    hint.innerHTML = `Valinn leikmaður: <b>${selectedPlayer}</b> — veldu svæði fyrir Mark/Skot varið, eða smelltu beint á Tapaður bolti / Fríkast unnið / Varið í vörn / Stolinn.`;
   } else {
     hint.innerHTML = 'Veldu leikmann að ofan til að skrá atvik.';
   }
@@ -969,11 +974,17 @@ function logEvent(){
 }
 
 function undoLast(){
-  events.pop();
+  const lastP = events[events.length-1];
+  const lastG = gkEvents[gkEvents.length-1];
+  if(!lastP && !lastG) return;
+  const tP = lastP ? new Date(lastP.time).getTime() : -1;
+  const tG = lastG ? new Date(lastG.time).getTime() : -1;
+  if(tG > tP) gkEvents.pop(); else events.pop();
   renderLog();
   renderSummary();
   renderAnalysis();
   renderGoalsTotal();
+  renderGk();
   markDirty();
 }
 
@@ -984,19 +995,31 @@ function renderGoalsTotal(){
   badge.textContent = `⚽ Mörk: ${totalGoals}`;
 }
 
+function logEntries(){
+  const list = [];
+  events.forEach((ev,idx)=>list.push({kind:'p', ev, idx, t:new Date(ev.time).getTime()}));
+  gkEvents.forEach((ev,idx)=>list.push({kind:'g', ev, idx, t:new Date(ev.time).getTime()}));
+  list.sort((a,b)=> b.t - a.t);   // nýjast efst
+  return list;
+}
+
 function renderLog(){
   const list = document.getElementById('logList');
-  if(events.length===0){
+  if(events.length === 0 && gkEvents.length === 0){
     list.innerHTML = '<div class="log-empty">Engin atvik skráð enn.</div>';
     return;
   }
   list.innerHTML = '';
-  events.map((ev,idx)=>({ev,idx})).reverse().forEach(({ev,idx})=>{
+  logEntries().forEach(({kind, ev, idx})=>{
     const row = document.createElement('div');
     row.className = 'log-row';
-    const fbTag = ev.fastBreak ? ' ⚡' : '';
-    const zoneTag = ev.zone ? ` 🎯${ev.zone}` : '';
-    row.innerHTML = `<span>${ev.player} · HL${ev.half}</span><span class="tag" style="background:${EVENT_COLORS[ev.type]}">${ev.type}${fbTag}${zoneTag}</span><button class="log-del" title="Eyða atviki" onclick="deleteEvent(${idx})">✕</button>`;
+    if(kind === 'p'){
+      const fbTag = ev.fastBreak ? ' ⚡' : '';
+      const zoneTag = ev.zone ? ` 🎯${ev.zone}` : '';
+      row.innerHTML = `<span>${ev.player} · HL${ev.half}</span><span class="tag" style="background:${EVENT_COLORS[ev.type]}">${ev.type}${fbTag}${zoneTag}</span><button class="log-del" title="Eyða atviki" onclick="deleteEvent(${idx})">✕</button>`;
+    } else {
+      row.innerHTML = `<span>🧤 ${ev.gk} · HL${ev.half}</span><span class="tag" style="background:${GK_COLORS[ev.type]}">${GK_LABEL[ev.type]}</span><button class="log-del" title="Eyða skoti" onclick="deleteGkEvent(${idx})">✕</button>`;
+    }
     list.appendChild(row);
   });
 }
@@ -1024,12 +1047,12 @@ function renderSummary(){
   const body = document.getElementById('summaryBody');
   const foot = document.getElementById('summaryFoot');
   body.innerHTML = '';
-  const totals = {Mark:0,'Skot varið':0,'Tapaður bolti':0,'Fríkast unnið':0,'Varið í vörn':0};
+  const totals = {Mark:0,'Skot varið':0,'Tapaður bolti':0,'Fríkast unnið':0,'Varið í vörn':0,'Stolinn':0};
   let totalFastBreak = 0;
   const scopedEvents = summaryFilter==='all' ? events : events.filter(e=>String(e.half)===summaryFilter);
 
   roster.forEach(name=>{
-    const stats = {Mark:0,'Skot varið':0,'Tapaður bolti':0,'Fríkast unnið':0,'Varið í vörn':0};
+    const stats = {Mark:0,'Skot varið':0,'Tapaður bolti':0,'Fríkast unnið':0,'Varið í vörn':0,'Stolinn':0};
     const playerEvents = scopedEvents.filter(e=>e.player===name);
     playerEvents.forEach(e=> stats[e.type]++ );
     const fastBreakCount = playerEvents.filter(e=>e.fastBreak).length;
@@ -1041,7 +1064,7 @@ function renderSummary(){
     totalFastBreak += fastBreakCount;
 
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${name}</td><td>${stats.Mark}</td><td>${stats['Skot varið']}</td><td>${pct}</td><td>${stats['Tapaður bolti']}</td><td>${stats['Fríkast unnið']}</td><td>${stats['Varið í vörn']}</td><td>${fastBreakCount}</td><td>${hradPct}</td><td><b>${total}</b></td>`;
+    tr.innerHTML = `<td>${name}</td><td>${stats.Mark}</td><td>${stats['Skot varið']}</td><td>${pct}</td><td>${stats['Tapaður bolti']}</td><td>${stats['Fríkast unnið']}</td><td>${stats['Varið í vörn']}</td><td>${stats['Stolinn']}</td><td>${fastBreakCount}</td><td>${hradPct}</td><td><b>${total}</b></td>`;
     body.appendChild(tr);
   });
 
@@ -1049,8 +1072,9 @@ function renderSummary(){
   const totalPct = totalShots>0 ? Math.round(totals.Mark/totalShots*100)+'%' : '—';
   const totalHradPct = totalShots>0 ? Math.round(totalFastBreak/totalShots*100)+'%' : '—';
   const grand = Object.values(totals).reduce((a,b)=>a+b,0);
-  foot.innerHTML = `<tr><td>Samtals</td><td>${totals.Mark}</td><td>${totals['Skot varið']}</td><td>${totalPct}</td><td>${totals['Tapaður bolti']}</td><td>${totals['Fríkast unnið']}</td><td>${totals['Varið í vörn']}</td><td>${totalFastBreak}</td><td>${totalHradPct}</td><td>${grand}</td></tr>`;
+  foot.innerHTML = `<tr><td>Samtals</td><td>${totals.Mark}</td><td>${totals['Skot varið']}</td><td>${totalPct}</td><td>${totals['Tapaður bolti']}</td><td>${totals['Fríkast unnið']}</td><td>${totals['Varið í vörn']}</td><td>${totals['Stolinn']}</td><td>${totalFastBreak}</td><td>${totalHradPct}</td><td>${grand}</td></tr>`;
   renderZoneBreakdown();
+  renderGkSummary();
 }
 
 function zoneStatsFor(playerEvents){
@@ -1184,8 +1208,8 @@ function gkNrOf(name){
   return info ? info.nr : '';
 }
 
-function gkCounts(name){
-  const evs = gkEvents.filter(e=>e.gk===name);
+function gkCounts(name, source){
+  const evs = (source || gkEvents).filter(e=>e.gk===name);
   const varid = evs.filter(e=>e.type==='Varið').length;
   const mark = evs.filter(e=>e.type==='Mark').length;
   const fram = evs.filter(e=>e.type==='Framhjá').length;
@@ -1202,23 +1226,27 @@ function setActiveGk(name){
   saveState();
 }
 
+function setEventMode(mode){
+  eventMode = mode === 'gk' ? 'gk' : 'player';
+  document.getElementById('playerEventPane').style.display = eventMode === 'player' ? 'block' : 'none';
+  document.getElementById('gkEventPane').style.display = eventMode === 'gk' ? 'block' : 'none';
+  document.getElementById('modeBtnPlayer').classList.toggle('active', eventMode === 'player');
+  document.getElementById('modeBtnGk').classList.toggle('active', eventMode === 'gk');
+}
+
 function logGk(type){
   if(!activeGk) return;
   gkEvents.push({gk: activeGk, type, half: currentHalf, time: new Date()});
   renderGk();
-  markDirty();
-}
-
-function undoLastGk(){
-  gkEvents.pop();
-  renderGk();
+  renderLog();
   markDirty();
 }
 
 function deleteGkEvent(idx){
-  if(!confirm('Eyða þessu skoti úr skotaskrá?')) return;
+  if(!confirm('Eyða þessu skoti úr atvikaskrá?')) return;
   gkEvents.splice(idx,1);
   renderGk();
+  renderLog();
   markDirty();
 }
 
@@ -1244,34 +1272,27 @@ function renderGk(){
     const c = gkCounts(activeGk);
     hint.innerHTML = `Í marki: <b>${activeGk}</b> — Varið ${c.varid} · Mörk á okkur ${c.mark} · Framhjá ${c.fram} (markvarsla ${gkPct(c.varid, c.onTarget)})`;
   } else {
-    hint.innerHTML = 'Veldu markmann hér að ofan.';
+    hint.innerHTML = 'Veldu markmann í „Í marki“ hér að ofan.';
   }
+  renderGkSummary();
+}
 
+function renderGkSummary(){
   const body = document.getElementById('gkSummaryBody');
   const foot = document.getElementById('gkSummaryFoot');
+  if(!body || !foot) return;
+  const gks = gkRoster.filter(n=>n && n.trim());
+  const scoped = summaryFilter === 'all' ? gkEvents : gkEvents.filter(e=>String(e.half) === summaryFilter);
   body.innerHTML = '';
   let tV=0, tM=0, tF=0;
   gks.forEach(name=>{
-    const c = gkCounts(name);
+    const c = gkCounts(name, scoped);
     tV += c.varid; tM += c.mark; tF += c.fram;
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${name}</td><td>${c.varid}</td><td>${c.mark}</td><td>${c.fram}</td><td>${c.onTarget}</td><td><b>${gkPct(c.varid, c.onTarget)}</b></td>`;
     body.appendChild(tr);
   });
   foot.innerHTML = `<tr><td>Samtals</td><td>${tV}</td><td>${tM}</td><td>${tF}</td><td>${tV+tM}</td><td>${gkPct(tV, tV+tM)}</td></tr>`;
-
-  const list = document.getElementById('gkLogList');
-  if(gkEvents.length === 0){
-    list.innerHTML = '<div class="log-empty">Engin skot skráð enn.</div>';
-    return;
-  }
-  list.innerHTML = '';
-  gkEvents.map((ev,idx)=>({ev,idx})).reverse().forEach(({ev,idx})=>{
-    const row = document.createElement('div');
-    row.className = 'log-row';
-    row.innerHTML = `<span>${ev.gk} · HL${ev.half}</span><span class="tag" style="background:${GK_COLORS[ev.type]}">${GK_LABEL[ev.type]}</span><button class="log-del" title="Eyða skoti" onclick="deleteGkEvent(${idx})">✕</button>`;
-    list.appendChild(row);
-  });
 }
 
 function elVal(id){ const e = document.getElementById(id); return e ? e.value : ''; }
@@ -1324,7 +1345,7 @@ function onMetaChange(){
 
 function showLockedUI(){
   buildChips();
-  ['registerCard','eventCard','logCard','summaryCard','analysisCard'].forEach(id=>{
+  ['registerCard','gkCard','eventCard','logCard','summaryCard','analysisCard'].forEach(id=>{
     document.getElementById(id).style.display = 'block';
   });
   document.getElementById('setupCard').style.display = 'none';
@@ -1421,6 +1442,7 @@ function buildSheetCsv(meta){
       else if(e.type === 'Tapaður bolti'){ add('TB'); }
       else if(e.type === 'Fríkast unnið'){ add('FV'); }
       else if(e.type === 'Varið í vörn'){ add('LS'); }
+      else if(e.type === 'Stolinn'){ add('ST'); }
     });
   });
   gkRoster.forEach(rawName=>{
@@ -1558,13 +1580,13 @@ function resetAll(){
   buildSetupGrid();
   document.getElementById('setupCard').style.display='block';
   document.getElementById('registerCard').style.display='none';
+  document.getElementById('gkCard').style.display='none';
   document.getElementById('eventCard').style.display='none';
   document.getElementById('logCard').style.display='none';
   document.getElementById('summaryCard').style.display='none';
   document.getElementById('analysisCard').style.display='none';
   document.getElementById('tabBar').style.display='none';
   document.getElementById('tabUppgreining').style.display='none';
-  document.getElementById('tabMarkmadur').style.display='none';
   document.getElementById('tabSkraning').style.display='block';
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab==='skraning'));
   document.querySelectorAll('.evt-btn').forEach(b=>{b.disabled=true;b.classList.remove('selected');});
@@ -1573,6 +1595,7 @@ function resetAll(){
   const fastBreakCheck = document.getElementById('fastBreakCheck');
   fastBreakCheck.checked = false;
   fastBreakCheck.disabled = true;
+  setEventMode('player');
   renderLog();
   renderGoalsTotal();
   renderGk();

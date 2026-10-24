@@ -1,6 +1,6 @@
 // Þjónustuvinnsluskrá: appið opnast samstundis og virkar án nets.
 // Hækkaðu útgáfunúmerið (v1 -> v2) í hvert skipti sem þú setur nýja index.html í loftið.
-const CACHE = 'haukar-skraning-v1';
+const CACHE = 'haukar-skraning-v2';
 const ASSETS = [
   './',
   './index.html',
